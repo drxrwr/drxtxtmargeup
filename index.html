@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Gabung File TXT</title>
+  <link rel="stylesheet" href="styles.css"/>
+</head>
+<body>
+  <header class="container">
+    <h1>Gabung File TXT</h1>
+    <p class="subtitle">Upload banyak file .txt, atur urutan (drag & drop), lihat total nomor, dan download hasil gabungan.</p>
+  </header>
+
+  <main class="container">
+    <section class="uploader">
+      <div id="dropzone" class="dropzone">
+        <div class="dz-inner">
+          <p><strong>Drag & Drop</strong> file .txt ke sini, atau</p>
+          <label class="btn btn-green">
+            Pilih File
+            <input id="fileInput" type="file" accept=".txt" multiple hidden />
+          </label>
+        </div>
+      </div>
+
+      <div class="controls">
+        <div class="control">
+          <label for="sortSelect">Urutkan</label>
+          <select id="sortSelect">
+            <option value="manual">Manual (drag & drop)</option>
+            <option value="name_asc">Nama A→Z</option>
+            <option value="name_desc">Nama Z→A</option>
+            <option value="lines_asc">Jumlah baris ↑</option>
+            <option value="lines_desc">Jumlah baris ↓</option>
+            <option value="uploaded">Sesuai urutan upload</option>
+          </select>
+        </div>
+
+        <div class="control checkbox">
+          <label>
+            <input type="checkbox" id="prefixToggle">
+            Tambahkan awalan nama file ke setiap nomor
+          </label>
+        </div>
+      </div>
+    </section>
+
+    <section class="files">
+      <div class="files-header">
+        <h2>Daftar File (<span id="fileCount">0</span>)</h2>
+        <div class="totals">
+          Total nomor: <strong id="totalLines">0</strong>
+        </div>
+      </div>
+      <ul id="fileList" class="file-list"></ul>
+    </section>
+
+    <section class="output">
+      <div class="control grow">
+        <label for="outputName">Nama file gabungan</label>
+        <input id="outputName" type="text" placeholder="Kosongkan untuk otomatis: <total>.txt"/>
+      </div>
+      <button id="downloadBtn" class="btn btn-green">Download Gabungan</button>
+    </section>
+  </main>
+
+  <footer class="container footer">
+    <small>Warna: background putih, teks hitam, tombol hijau.</small>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>
