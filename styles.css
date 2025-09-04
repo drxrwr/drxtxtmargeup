@@ -1,0 +1,33 @@
+:root{
+  --bg:#ffffff;
+  --fg:#111111;
+  --muted:#666666;
+  --green:#16a34a;
+  --green-hover:#15803d;
+  --border:#e5e7eb;
+}
+
+body{
+  margin:0;
+  font-family: system-ui, sans-serif;
+  background:var(--bg);
+  color:var(--fg);
+}
+
+.container{width:min(960px,92vw);margin:auto}
+h1{margin:0 0 6px 0}
+.subtitle{color:var(--muted)}
+
+.dropzone{
+  border:2px dashed var(--border);
+  border-radius:14px;
+  padding:20px;
+  text-align:center;
+  cursor:pointer;
+}
+.file-list{list-style:none;padding:0;display:grid;gap:10px}
+.file-item{display:grid;grid-template-columns:28px 1fr auto;gap:12px;padding:12px;border:1px solid var(--border);border-radius:12px}
+.handle{cursor:grab;font-weight:bold}
+.btn{padding:10px 14px;border:none;border-radius:10px;cursor:pointer}
+.btn-green{background:var(--green);color:white}
+.btn-green:hover{background:var(--green-hover)}
