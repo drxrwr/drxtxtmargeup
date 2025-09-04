@@ -1,80 +1,138 @@
-function readTextFile(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result || "");
-    reader.onerror = reject;
-    reader.readAsText(file);
-  });
-}
+const dropzone = document.getElementById("dropzone");
+const fileInput = document.getElementById("fileInput");
+const chooseFilesBtn = document.getElementById("chooseFiles");
+const fileListEl = document.getElementById("fileList");
+const totalCountEl = document.getElementById("totalCount");
+const downloadBtn = document.getElementById("downloadBtn");
+const outputNameInput = document.getElementById("outputName");
 
-let filesState = [];
-const fileInput = document.getElementById('fileInput');
-const dropzone = document.getElementById('dropzone');
-const sortSelect = document.getElementById('sortSelect');
-const fileList = document.getElementById('fileList');
-const totalLinesEl = document.getElementById('totalLines');
-const fileCountEl = document.getElementById('fileCount');
-const outputNameEl = document.getElementById('outputName');
-const downloadBtn = document.getElementById('downloadBtn');
-const prefixToggle = document.getElementById('prefixToggle');
+let filesData = [];
 
-fileInput.addEventListener('change', async (e) => {
-  await addFiles([...e.target.files]);
-  fileInput.value = '';
-});
-dropzone.addEventListener('drop', async (e) => {
+// Handle pilih file lewat tombol
+chooseFilesBtn.addEventListener("click", () => fileInput.click());
+
+// Handle file input
+fileInput.addEventListener("change", (e) => handleFiles(e.target.files));
+
+// Handle drag & drop
+dropzone.addEventListener("dragover", (e) => {
   e.preventDefault();
-  await addFiles([...e.dataTransfer.files]);
+  dropzone.classList.add("dragover");
 });
-dropzone.addEventListener('dragover', e => e.preventDefault());
-dropzone.addEventListener('click', () => fileInput.click());
+dropzone.addEventListener("dragleave", () => dropzone.classList.remove("dragover"));
+dropzone.addEventListener("drop", (e) => {
+  e.preventDefault();
+  dropzone.classList.remove("dragover");
+  handleFiles(e.dataTransfer.files);
+});
 
-async function addFiles(files){
-  for (const f of files){
-    if (!f.name.endsWith('.txt')) continue;
-    const text = await readTextFile(f);
-    const lines = text.split(/\r?\n/).map(s=>s.trim()).filter(s=>s);
-    filesState.push({id:crypto.randomUUID(), name:f.name, lines});
+// Baca file TXT
+function handleFiles(selectedFiles) {
+  Array.from(selectedFiles).forEach((file) => {
+    if (file.name.endsWith(".txt")) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const content = e.target.result.split(/\r?\n/).filter(line => line.trim() !== "");
+        filesData.push({ name: file.name, content });
+        renderFileList();
+      };
+      reader.readAsText(file);
+    }
+  });
+}
+
+// Render daftar file
+function renderFileList() {
+  fileListEl.innerHTML = "";
+  let total = 0;
+
+  filesData.forEach((file, index) => {
+    total += file.content.length;
+    const li = document.createElement("li");
+    li.draggable = true;
+    li.dataset.index = index;
+    li.innerHTML = `<span>${file.name} (${file.content.length} baris)</span>`;
+    fileListEl.appendChild(li);
+  });
+
+  totalCountEl.textContent = `Total nomor: ${total}`;
+  initDragAndDrop();
+}
+
+// Drag & Drop reorder
+function initDragAndDrop() {
+  const listItems = document.querySelectorAll(".file-list li");
+
+  listItems.forEach((li) => {
+    li.addEventListener("dragstart", () => {
+      li.classList.add("dragging");
+    });
+    li.addEventListener("dragend", () => {
+      li.classList.remove("dragging");
+      updateOrder();
+    });
+  });
+
+  fileListEl.addEventListener("dragover", (e) => {
+    e.preventDefault();
+    const dragging = document.querySelector(".dragging");
+    const afterElement = getDragAfterElement(fileListEl, e.clientY);
+    if (afterElement == null) {
+      fileListEl.appendChild(dragging);
+    } else {
+      fileListEl.insertBefore(dragging, afterElement);
+    }
+  });
+}
+
+function getDragAfterElement(container, y) {
+  const draggableElements = [...container.querySelectorAll("li:not(.dragging)")];
+  return draggableElements.reduce((closest, child) => {
+    const box = child.getBoundingClientRect();
+    const offset = y - box.top - box.height / 2;
+    if (offset < 0 && offset > closest.offset) {
+      return { offset: offset, element: child };
+    } else {
+      return closest;
+    }
+  }, { offset: Number.NEGATIVE_INFINITY }).element;
+}
+
+// Update order filesData setelah drag & drop
+function updateOrder() {
+  const newOrder = [];
+  document.querySelectorAll(".file-list li").forEach((li) => {
+    const index = li.dataset.index;
+    newOrder.push(filesData[index]);
+  });
+  filesData = newOrder;
+}
+
+// Download gabungan
+downloadBtn.addEventListener("click", () => {
+  if (filesData.length === 0) {
+    alert("Upload file dulu!");
+    return;
   }
-  render();
-}
 
-function render(){
-  fileCountEl.textContent = filesState.length;
-  totalLinesEl.textContent = filesState.reduce((a,b)=>a+b.lines.length,0);
-  fileList.innerHTML = '';
-  filesState.forEach(file=>{
-    const li=document.createElement('li');
-    li.className='file-item'; li.draggable=true; li.dataset.id=file.id;
-    li.innerHTML=`<div class="handle">⋮⋮</div>
-      <div><div>${file.name}</div><div>${file.lines.length} baris</div></div>`;
-    li.addEventListener('dragstart', e=>{
-      e.dataTransfer.setData('id', file.id);
-    });
-    li.addEventListener('dragover', e=>e.preventDefault());
-    li.addEventListener('drop', e=>{
-      const fromId=e.dataTransfer.getData('id');
-      const fromIdx=filesState.findIndex(f=>f.id===fromId);
-      const toIdx=filesState.findIndex(f=>f.id===file.id);
-      const moved=filesState.splice(fromIdx,1)[0];
-      filesState.splice(toIdx,0,moved);
-      render();
-    });
-    fileList.appendChild(li);
+  let merged = [];
+  filesData.forEach(file => {
+    merged = merged.concat(file.content);
   });
-}
 
-downloadBtn.addEventListener('click', ()=>{
-  let all=[];
-  filesState.forEach(f=>{
-    const prefix=prefixToggle.checked? f.name.replace(/\\.txt$/,'')+': ' : '';
-    f.lines.forEach(line=>all.push(prefix+line));
-  });
-  const content=all.join("\\n");
-  const name=outputNameEl.value.trim()||filesState.reduce((a,b)=>a+b.lines.length,0)+'.txt';
-  const blob=new Blob([content],{type:'text/plain'});
-  const a=document.createElement('a');
-  a.href=URL.createObjectURL(blob);
-  a.download=name.endsWith('.txt')?name:name+'.txt';
+  const blob = new Blob([merged.join("\n")], { type: "text/plain" });
+  const url = URL.createObjectURL(blob);
+
+  let filename = outputNameInput.value.trim();
+  if (!filename) {
+    filename = `${merged.length}.txt`;
+  } else if (!filename.endsWith(".txt")) {
+    filename += ".txt";
+  }
+
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
   a.click();
+  URL.revokeObjectURL(url);
 });
